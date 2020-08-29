@@ -1,0 +1,56 @@
+---
+- name: Deploy Docker Demo
+  hosts: vms
+  become: true
+  gather_facts: false
+  vars:
+    WORK_DIR: "/home/sachi/work"
+  tasks:
+    - name: Install Git, NodeJS and NPM
+      apt:
+        name:
+          - git
+          - nodejs
+          - npm
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+        
+    - name: Start Docker
+      systemd:
+        name: docker
+        state: started
+
+    - name: Clone Random Image URL Repo
+      git:
+        repo: https://github.com/sachirjn/random-image-url.git
+        dest: "{{ WORK_DIR }}/random-image-url"
+
+    - name: Clone Docker Demo Repo
+      git:
+        repo: https://github.com/sachirjn/docker-demo.git
+        dest: "{{ WORK_DIR }}/docker-demo"
+    
+    - name: Build Image Random Image URL
+      docker_image:
+        name: sachirjn/random-image-url:latest
+        build:
+          path: "{{ WORK_DIR }}/random-image-url"
+        state: present
+
+    - name: Build Image Docker Demo
+      docker_image:
+        name: sachirjn/docker-demo:latest
+        build:
+          path: "{{ WORK_DIR }}/docker-demo"
+        state: present
+    
+    - name: Run Docker Demo
+      docker_compose:
+        project_src: "{{ WORK_DIR }}/docker-demo"
+        state: present
